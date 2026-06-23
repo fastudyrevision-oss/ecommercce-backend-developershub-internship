@@ -1,20 +1,28 @@
 const express = require('express');
 const router = express.Router();
 const Product = require('../models/Product');
+const { protect, authorize } = require('../middleware/auth');
 
 // @desc    Get all products
 // @route   GET /api/products
 router.get('/', async (req, res) => {
   try {
-    let query;
     const reqQuery = { ...req.query };
     const removeFields = ['select', 'sort', 'page', 'limit'];
     removeFields.forEach((param) => delete reqQuery[param]);
 
-    let queryStr = JSON.stringify(reqQuery);
+    const allowedFilters = ['category', 'price', 'name', 'stock'];
+    const sanitizedQuery = {};
+    for (const key of Object.keys(reqQuery)) {
+      if (allowedFilters.includes(key)) {
+        sanitizedQuery[key] = reqQuery[key];
+      }
+    }
+
+    let queryStr = JSON.stringify(sanitizedQuery);
     queryStr = queryStr.replace(/\b(gt|gte|lt|lte|in)\b/g, (match) => `$${match}`);
 
-    query = Product.find(JSON.parse(queryStr));
+    let query = Product.find(JSON.parse(queryStr));
 
     // Select Fields
     if (req.query.select) {
@@ -32,7 +40,7 @@ router.get('/', async (req, res) => {
 
     // Pagination
     const page = parseInt(req.query.page, 10) || 1;
-    const limit = parseInt(req.query.limit, 10) || 10;
+    const limit = Math.min(parseInt(req.query.limit, 10) || 10, 100);
     const startIndex = (page - 1) * limit;
     const endIndex = page * limit;
     const total = await Product.countDocuments();
@@ -41,7 +49,6 @@ router.get('/', async (req, res) => {
 
     const products = await query;
 
-    // Pagination result
     const pagination = {};
     if (endIndex < total) {
       pagination.next = { page: page + 1, limit };
@@ -57,7 +64,7 @@ router.get('/', async (req, res) => {
       data: products,
     });
   } catch (err) {
-    res.status(400).json({ success: false, error: err.message });
+    res.status(500).json({ success: false, error: 'Server error' });
   }
 });
 
@@ -71,18 +78,19 @@ router.get('/:id', async (req, res) => {
     }
     res.status(200).json({ success: true, data: product });
   } catch (err) {
-    res.status(400).json({ success: false, error: err.message });
+    res.status(500).json({ success: false, error: 'Server error' });
   }
 });
 
 // @desc    Create new product
 // @route   POST /api/products
-router.post('/', async (req, res) => {
+router.post('/', protect, authorize('admin'), async (req, res) => {
   try {
-    const product = await Product.create(req.body);
+    const { name, price, category, image, description, stock } = req.body;
+    const product = await Product.create({ name, price, category, image, description, stock });
     res.status(201).json({ success: true, data: product });
   } catch (err) {
-    res.status(400).json({ success: false, error: err.message });
+    res.status(400).json({ success: false, error: 'Invalid product data' });
   }
 });
 

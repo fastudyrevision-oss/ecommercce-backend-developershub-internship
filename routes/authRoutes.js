@@ -6,11 +6,11 @@ const User = require('../models/User');
 // @route   POST /api/auth/register
 router.post('/register', async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
-    const user = await User.create({ name, email, password, role });
+    const { name, email, password } = req.body;
+    const user = await User.create({ name, email, password });
     sendTokenResponse(user, 201, res);
   } catch (err) {
-    res.status(400).json({ success: false, error: err.message });
+    res.status(400).json({ success: false, error: 'Registration failed' });
   }
 });
 
@@ -32,7 +32,7 @@ router.post('/login', async (req, res) => {
     }
     sendTokenResponse(user, 200, res);
   } catch (err) {
-    res.status(400).json({ success: false, error: err.message });
+    res.status(500).json({ success: false, error: 'Server error' });
   }
 });
 
