@@ -1,4 +1,3 @@
-const fs = require('fs');
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 
@@ -9,7 +8,15 @@ dotenv.config();
 const Product = require('./models/Product');
 
 // Connect to DB
-mongoose.connect(process.env.MONGO_URI);
+const connectDB = async () => {
+  try {
+    await mongoose.connect(process.env.MONGO_URI);
+    console.log('MongoDB Connected for seeding...');
+  } catch (err) {
+    console.error(`Database connection failed: ${err.message}`);
+    process.exit(1);
+  }
+};
 
 // Sample Data
 const products = [
@@ -46,22 +53,26 @@ const products = [
 // Import into DB
 const importData = async () => {
   try {
+    await connectDB();
     await Product.create(products);
     console.log('Data Imported...');
     process.exit();
   } catch (err) {
-    console.error(err);
+    console.error(`Import failed: ${err.message}`);
+    process.exit(1);
   }
 };
 
 // Delete data
 const deleteData = async () => {
   try {
+    await connectDB();
     await Product.deleteMany();
     console.log('Data Destroyed...');
     process.exit();
   } catch (err) {
-    console.error(err);
+    console.error(`Delete failed: ${err.message}`);
+    process.exit(1);
   }
 };
 
@@ -69,4 +80,7 @@ if (process.argv[2] === '-i') {
   importData();
 } else if (process.argv[2] === '-d') {
   deleteData();
+} else {
+  console.error('Please use -i to import or -d to delete data');
+  process.exit(1);
 }

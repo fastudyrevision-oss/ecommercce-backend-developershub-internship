@@ -2,10 +2,11 @@ const express = require('express');
 const router = express.Router();
 const Product = require('../models/Product');
 const { protect, authorize } = require('../middleware/auth');
+const ErrorResponse = require('../utils/ErrorResponse');
 
 // @desc    Get all products
 // @route   GET /api/products
-router.get('/', async (req, res) => {
+router.get('/', async (req, res, next) => {
   try {
     const reqQuery = { ...req.query };
     const removeFields = ['select', 'sort', 'page', 'limit'];
@@ -64,33 +65,33 @@ router.get('/', async (req, res) => {
       data: products,
     });
   } catch (err) {
-    res.status(500).json({ success: false, error: 'Server error' });
+    next(err);
   }
 });
 
 // @desc    Get single product
 // @route   GET /api/products/:id
-router.get('/:id', async (req, res) => {
+router.get('/:id', async (req, res, next) => {
   try {
     const product = await Product.findById(req.params.id);
     if (!product) {
-      return res.status(404).json({ success: false, error: 'Product not found' });
+      return next(new ErrorResponse('Product not found', 404));
     }
     res.status(200).json({ success: true, data: product });
   } catch (err) {
-    res.status(500).json({ success: false, error: 'Server error' });
+    next(err);
   }
 });
 
 // @desc    Create new product
 // @route   POST /api/products
-router.post('/', protect, authorize('admin'), async (req, res) => {
+router.post('/', protect, authorize('admin'), async (req, res, next) => {
   try {
     const { name, price, category, image, description, stock } = req.body;
     const product = await Product.create({ name, price, category, image, description, stock });
     res.status(201).json({ success: true, data: product });
   } catch (err) {
-    res.status(400).json({ success: false, error: 'Invalid product data' });
+    next(err);
   }
 });
 
