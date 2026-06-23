@@ -3,6 +3,7 @@ const dotenv = require('dotenv');
 const cors = require('cors');
 const morgan = require('morgan');
 const connectDB = require('./config/db');
+const errorHandler = require('./middleware/errorHandler');
 
 // Load env vars
 dotenv.config();
@@ -37,6 +38,9 @@ const inquiryRoutes = require('./routes/inquiryRoutes');
 app.use('/api/products', productRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/inquiries', inquiryRoutes);
+
+// Centralized error handler (must be after route mounting)
+app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 

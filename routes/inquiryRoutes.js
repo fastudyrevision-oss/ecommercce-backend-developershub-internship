@@ -1,27 +1,21 @@
 const express = require('express');
 const router = express.Router();
 const Inquiry = require('../models/Inquiry');
+const asyncHandler = require('../utils/asyncHandler');
+const sendResponse = require('../utils/sendResponse');
 
 // @desc    Submit inquiry
 // @route   POST /api/inquiries
-router.post('/', async (req, res) => {
-  try {
-    const inquiry = await Inquiry.create(req.body);
-    res.status(201).json({ success: true, data: inquiry });
-  } catch (err) {
-    res.status(400).json({ success: false, error: err.message });
-  }
-});
+router.post('/', asyncHandler(async (req, res) => {
+  const inquiry = await Inquiry.create(req.body);
+  sendResponse(res, 201, { data: inquiry });
+}));
 
 // @desc    Get all inquiries (Admin only in production)
 // @route   GET /api/inquiries
-router.get('/', async (req, res) => {
-  try {
-    const inquiries = await Inquiry.find().sort('-createdAt');
-    res.status(200).json({ success: true, data: inquiries });
-  } catch (err) {
-    res.status(400).json({ success: false, error: err.message });
-  }
-});
+router.get('/', asyncHandler(async (req, res) => {
+  const inquiries = await Inquiry.find().sort('-createdAt');
+  sendResponse(res, 200, { data: inquiries });
+}));
 
 module.exports = router;
