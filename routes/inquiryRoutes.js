@@ -5,24 +5,24 @@ const { protect, authorize } = require('../middleware/auth');
 
 // @desc    Submit inquiry
 // @route   POST /api/inquiries
-router.post('/', async (req, res) => {
+router.post('/', async (req, res, next) => {
   try {
     const { item, quantity, unit, message, email } = req.body;
     const inquiry = await Inquiry.create({ item, quantity, unit, message, email });
     res.status(201).json({ success: true, data: inquiry });
   } catch (err) {
-    res.status(400).json({ success: false, error: 'Invalid inquiry data' });
+    next(err);
   }
 });
 
 // @desc    Get all inquiries (Admin only)
 // @route   GET /api/inquiries
-router.get('/', protect, authorize('admin'), async (req, res) => {
+router.get('/', protect, authorize('admin'), async (req, res, next) => {
   try {
     const inquiries = await Inquiry.find().sort('-createdAt');
     res.status(200).json({ success: true, data: inquiries });
   } catch (err) {
-    res.status(500).json({ success: false, error: 'Server error' });
+    next(err);
   }
 });
 
