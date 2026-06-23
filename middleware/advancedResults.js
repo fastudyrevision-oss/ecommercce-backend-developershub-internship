@@ -1,9 +1,20 @@
-const advancedResults = (model) => async (req, res, next) => {
+const advancedResults = (model, options = {}) => async (req, res, next) => {
   const reqQuery = { ...req.query };
   const removeFields = ['select', 'sort', 'page', 'limit'];
   removeFields.forEach((param) => delete reqQuery[param]);
 
-  let queryStr = JSON.stringify(reqQuery);
+  const sanitizedQuery = {};
+  if (options.allowedFilters) {
+    for (const key of Object.keys(reqQuery)) {
+      if (options.allowedFilters.includes(key)) {
+        sanitizedQuery[key] = reqQuery[key];
+      }
+    }
+  } else {
+    Object.assign(sanitizedQuery, reqQuery);
+  }
+
+  let queryStr = JSON.stringify(sanitizedQuery);
   queryStr = queryStr.replace(/\b(gt|gte|lt|lte|in)\b/g, (match) => `$${match}`);
 
   let query = model.find(JSON.parse(queryStr));
@@ -24,7 +35,9 @@ const advancedResults = (model) => async (req, res, next) => {
 
   // Pagination
   const page = parseInt(req.query.page, 10) || 1;
-  const limit = parseInt(req.query.limit, 10) || 10;
+  const defaultLimit = 10;
+  const maxLimit = options.maxLimit || Infinity;
+  const limit = Math.min(parseInt(req.query.limit, 10) || defaultLimit, maxLimit);
   const startIndex = (page - 1) * limit;
   const endIndex = page * limit;
   const total = await model.countDocuments();

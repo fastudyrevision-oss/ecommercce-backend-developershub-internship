@@ -14,8 +14,8 @@ const sendTokenResponse = (user, statusCode, res) => {
 // @desc    Register user
 // @route   POST /api/auth/register
 router.post('/register', asyncHandler(async (req, res) => {
-  const { name, email, password, role } = req.body;
-  const user = await User.create({ name, email, password, role });
+  const { name, email, password } = req.body;
+  const user = await User.create({ name, email, password });
   sendTokenResponse(user, 201, res);
 }));
 

@@ -5,10 +5,11 @@ const asyncHandler = require('../utils/asyncHandler');
 const sendResponse = require('../utils/sendResponse');
 const ErrorResponse = require('../utils/ErrorResponse');
 const advancedResults = require('../middleware/advancedResults');
+const { protect, authorize } = require('../middleware/auth');
 
 // @desc    Get all products
 // @route   GET /api/products
-router.get('/', advancedResults(Product), (req, res) => {
+router.get('/', advancedResults(Product, { allowedFilters: ['category', 'price', 'name', 'stock'], maxLimit: 100 }), (req, res) => {
   sendResponse(res, 200, res.advancedResults);
 });
 
@@ -24,8 +25,9 @@ router.get('/:id', asyncHandler(async (req, res) => {
 
 // @desc    Create new product
 // @route   POST /api/products
-router.post('/', asyncHandler(async (req, res) => {
-  const product = await Product.create(req.body);
+router.post('/', protect, authorize('admin'), asyncHandler(async (req, res) => {
+  const { name, price, category, image, description, stock } = req.body;
+  const product = await Product.create({ name, price, category, image, description, stock });
   sendResponse(res, 201, { data: product });
 }));
 
