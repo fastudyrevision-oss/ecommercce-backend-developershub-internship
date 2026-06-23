@@ -1,26 +1,28 @@
 const express = require('express');
 const router = express.Router();
 const Inquiry = require('../models/Inquiry');
+const { protect, authorize } = require('../middleware/auth');
 
 // @desc    Submit inquiry
 // @route   POST /api/inquiries
 router.post('/', async (req, res) => {
   try {
-    const inquiry = await Inquiry.create(req.body);
+    const { item, quantity, unit, message, email } = req.body;
+    const inquiry = await Inquiry.create({ item, quantity, unit, message, email });
     res.status(201).json({ success: true, data: inquiry });
   } catch (err) {
-    res.status(400).json({ success: false, error: err.message });
+    res.status(400).json({ success: false, error: 'Invalid inquiry data' });
   }
 });
 
-// @desc    Get all inquiries (Admin only in production)
+// @desc    Get all inquiries (Admin only)
 // @route   GET /api/inquiries
-router.get('/', async (req, res) => {
+router.get('/', protect, authorize('admin'), async (req, res) => {
   try {
     const inquiries = await Inquiry.find().sort('-createdAt');
     res.status(200).json({ success: true, data: inquiries });
   } catch (err) {
-    res.status(400).json({ success: false, error: err.message });
+    res.status(500).json({ success: false, error: 'Server error' });
   }
 });
 
